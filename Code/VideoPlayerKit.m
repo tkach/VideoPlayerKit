@@ -2,7 +2,6 @@
 
 #import "VideoPlayerKit.h"
 #import "FullScreenViewController.h"
-#import "ShareThis.h"
 #import "DVIABPlayer.h"
 
 static void *DVViewControllerPlayerItemStatusObservationContext = &DVViewControllerPlayerItemStatusObservationContext;
@@ -177,7 +176,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
 - (void)presentShareOptions
 {
     showShareOptions = NO;
-    [ShareThis showShareOptionsToShareUrl:[_currentVideoInfo objectForKey:@"shareURL"] title:[_currentVideoInfo objectForKey:@"title"] image:nil onViewController:[[[UIApplication sharedApplication] keyWindow] rootViewController] forTypeOfContent:STContentTypeVideo];
+    NSLog(@"Sharing is not implemented!");
 }
 
 - (void)shareButtonHandler
