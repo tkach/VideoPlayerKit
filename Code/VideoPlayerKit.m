@@ -148,11 +148,14 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
     UITapGestureRecognizer *playerTouchedGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(videoTapHandler)];
     playerTouchedGesture.delegate = self;
     [_videoPlayerView addGestureRecognizer:playerTouchedGesture];
+    [_videoPlayerView.navigationBar.topItem.leftBarButtonItem setTarget:self];
+    [_videoPlayerView.navigationBar.topItem.leftBarButtonItem setAction:@selector(closePlayer)];
     
     UIPinchGestureRecognizer *pinchRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchGesture:)];
     [pinchRecognizer setDelegate:self];
     [self.view addGestureRecognizer:pinchRecognizer];
 }
+
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch
 {
@@ -352,8 +355,10 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
                                  if (showShareOptions) {
                                      [self presentShareOptions];
                                  }
-                                 
+                                 [self.videoPlayer pause];
+                                 [self.videoPlayer replaceCurrentItemWithPlayerItem:nil];
                                  [self.videoPlayerView removeFromSuperview];
+                                 self.videoPlayer = nil;
                              }];
         } else {
             [UIView animateWithDuration:0.45f
@@ -588,6 +593,11 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
     }
 }
 
+- (void)closePlayer {
+    [self minimizeVideo];
+}
+
+
 - (void)showControls
 {
     [[NSNotificationCenter defaultCenter] postNotificationName:kVideoPlayerWillShowControlsNotification
@@ -597,6 +607,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
         self.videoPlayerView.playerControlBar.alpha = 1.0;
         self.videoPlayerView.titleLabel.alpha = 1.0;
         _videoPlayerView.shareButton.alpha = 1.0;
+        self.videoPlayerView.navigationBar.alpha = 1.0;
     } completion:nil];
     
     if (self.fullScreenModeToggled) {
@@ -621,6 +632,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
             self.videoPlayerView.playerControlBar.alpha = 0;
             self.videoPlayerView.titleLabel.alpha = 0;
             _videoPlayerView.shareButton.alpha = 0;
+            self.videoPlayerView.navigationBar.alpha = 0;
         } completion:nil];
         
         if (self.fullScreenModeToggled) {
@@ -631,6 +643,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
     } else {
         self.videoPlayerView.playerControlBar.alpha = 0;
         self.videoPlayerView.titleLabel.alpha = 0;
+        self.videoPlayerView.navigationBar.alpha = 0;
         _videoPlayerView.shareButton.alpha = 0;
         if (self.fullScreenModeToggled) {
             [[UIApplication sharedApplication] setStatusBarHidden:YES

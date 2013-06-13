@@ -26,6 +26,8 @@
 
 @property (readonly, strong) UIActivityIndicatorView *activityIndicator;
 
+@property(nonatomic, strong) UINavigationBar *navigationBar;
+
 - (void)setTitle:(NSString *)title;
 - (CGFloat)heightForWidth:(CGFloat)width;
 - (void)setPlayer:(AVPlayer *)player;

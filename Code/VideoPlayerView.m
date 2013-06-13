@@ -24,6 +24,7 @@
 @property (readwrite, strong) UIProgressView *progressView;
 @property (readwrite, strong) UIActivityIndicatorView *activityIndicator;
 @property (readwrite, strong) UIButton *shareButton;
+
 @end
 
 @implementation VideoPlayerView
@@ -99,12 +100,23 @@
         
         _activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
         [self addSubview:_activityIndicator];
-
+        
         _shareButton = [[UIButton alloc] init];
         [_shareButton setImage:[UIImage imageNamed:@"share-button"] forState:UIControlStateNormal];
         [_shareButton setShowsTouchWhenHighlighted:YES];
         
         [self addSubview:_shareButton];
+        
+        self.navigationBar = [[UINavigationBar alloc] initWithFrame:CGRectZero];
+        self.navigationBar.barStyle = UIBarStyleBlackTranslucent;
+        [self addSubview:self.navigationBar];
+        
+        UINavigationItem *item = [[UINavigationItem alloc] initWithTitle:@""];
+        self.navigationBar.items = @[item];
+        
+        self.navigationBar.topItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Done", @"Done") style:UIBarButtonItemStyleDone
+                                                                                       target:nil
+                                                                                       action:nil];
         self.controlsEdgeInsets = UIEdgeInsetsZero;
     }
     return self;
@@ -121,7 +133,7 @@
     [super layoutSubviews];
     
     CGRect bounds = [self bounds];
-
+    
     CGRect insetBounds = CGRectInset(UIEdgeInsetsInsetRect(bounds, self.controlsEdgeInsets), _padding, _padding);
     CGSize titleLabelSize = [[_titleLabel text] sizeWithFont:[_titleLabel font]
                                            constrainedToSize:CGSizeMake(insetBounds.size.width, CGFLOAT_MAX)
@@ -146,11 +158,11 @@
                                         bounds.size.width,
                                         bounds.size.height - twoLineSize.height - _padding - _padding);
         [_airplayIsActiveView setFrame:playerFrame];
-
+        
         [_shareButton setFrame:CGRectMake(insetBounds.size.width - shareImage.size.width, insetBounds.origin.y, shareImage.size.width, shareImage.size.height)];
     } else {
         self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
+        
         [_titleLabel setFrame:CGRectMake(insetBounds.origin.x + self.padding,
                                          insetBounds.origin.y,
                                          insetBounds.size.width,
@@ -159,6 +171,7 @@
         [_airplayIsActiveView setFrame:bounds];
         
         [_shareButton setFrame:CGRectMake(insetBounds.size.width - shareImage.size.width, insetBounds.origin.y, shareImage.size.width, shareImage.size.height)];
+        self.navigationBar.frame = CGRectMake(0, 0, self.frame.size.width, 44);
     }
     
     [_playerControlBar setFrame:CGRectMake(bounds.origin.x,
@@ -220,6 +233,7 @@
 - (void)setTitle:(NSString *)title
 {
     [_titleLabel setText:title];
+    self.navigationBar.topItem.title = title;
     [self setNeedsLayout];
 }
 
