@@ -3,6 +3,9 @@
 #import "VideoPlayerKit.h"
 #import "FullScreenViewController.h"
 #import "ShareThis.h"
+#import "DVIABPlayer.h"
+
+static void *DVViewControllerPlayerItemStatusObservationContext = &DVViewControllerPlayerItemStatusObservationContext;
 
 NSString * const kVideoPlayerVideoChangedNotification = @"VideoPlayerVideoChangedNotification";
 NSString * const kVideoPlayerWillHideControlsNotification = @"VideoPlayerWillHideControlsNotitication";
@@ -80,8 +83,8 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
 }
 
 + (VideoPlayerKit *)videoPlayerWithContainingViewController:(UIViewController *)containingViewController
-                                                       optionalTopView:(UIView *)topView
-                                               hideTopViewWithControls:(BOOL)hideTopViewWithControls
+                                            optionalTopView:(UIView *)topView
+                                    hideTopViewWithControls:(BOOL)hideTopViewWithControls
 {
     VideoPlayerKit *videoPlayer = [[VideoPlayerKit alloc] initWithContainingViewController:containingViewController
                                                                            optionalTopView:topView
@@ -97,7 +100,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
     }
     _controlsEdgeInsets = controlsEdgeInsets;
     self.videoPlayerView.controlsEdgeInsets = _controlsEdgeInsets;
-
+    
     [self.view setNeedsLayout];
 }
 
@@ -130,7 +133,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-
+    
     _currentVideoInfo = [[NSDictionary alloc] init];
     
     [_videoPlayerView.playPauseButton addTarget:self action:@selector(playPauseHandler) forControlEvents:UIControlEventTouchUpInside];
@@ -183,7 +186,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
     if (self.fullScreenModeToggled) {
         showShareOptions = YES;
         [self minimizeVideo];
-    } else {    
+    } else {
         [self presentShareOptions];
     }
 }
@@ -372,7 +375,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
         
         
         [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:self.isAlwaysFullscreen completion:^{
-
+            
             if (!self.isAlwaysFullscreen) {
                 [self showControls];
             }
@@ -430,7 +433,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
 }
 
 - (void)videoTapHandler
-{    
+{
     if (_videoPlayerView.playerControlBar.alpha) {
         [self hideControlsAnimated:YES];
     } else {
@@ -468,19 +471,35 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
                     context:nil];
     
     if (!self.videoPlayer) {
-        _videoPlayer = [AVPlayer playerWithPlayerItem:playerItem];
-        [_videoPlayer setAllowsAirPlayVideo:YES];
-        [_videoPlayer setUsesAirPlayVideoWhileAirPlayScreenIsActive:YES];
+        self.videoPlayer = [AVPlayer playerWithPlayerItem:playerItem];
+        //        ((DVIABPlayer*)_videoPlayer).contentPlayerItem = playerItem;
+        [playerItem addObserver:self
+                     forKeyPath:@"status"
+                        options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew
+                        context:DVViewControllerPlayerItemStatusObservationContext];
         
-        if ([_videoPlayer respondsToSelector:@selector(setAllowsExternalPlayback:)]) { // iOS 6 API
-            [_videoPlayer setAllowsExternalPlayback:YES];
-        }
-        
-        [_videoPlayerView setPlayer:_videoPlayer];
     } else {
         [self removeObserversFromVideoPlayerItem];
         [self.videoPlayer replaceCurrentItemWithPlayerItem:playerItem];
     }
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(playerItemDidReachEnd:)
+                                                 name:AVPlayerItemDidPlayToEndTimeNotification
+                                               object:self.videoPlayer.currentItem];
+}
+
+
+- (void)setVideoPlayer:(AVPlayer *)videoPlayer {
+    _videoPlayer = videoPlayer;
+    [_videoPlayer setAllowsAirPlayVideo:YES];
+    [_videoPlayer setUsesAirPlayVideoWhileAirPlayScreenIsActive:YES];
+    
+    if ([_videoPlayer respondsToSelector:@selector(setAllowsExternalPlayback:)]) { // iOS 6 API
+        [_videoPlayer setAllowsExternalPlayback:YES];
+    }
+    
+    [_videoPlayerView setPlayer:_videoPlayer];
     
     // iOS 5
     [_videoPlayer addObserver:self forKeyPath:@"airPlayVideoActive" options:NSKeyValueObservingOptionNew context:nil];
@@ -490,11 +509,6 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
                    forKeyPath:@"externalPlaybackActive"
                       options:NSKeyValueObservingOptionNew
                       context:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(playerItemDidReachEnd:)
-                                                 name:AVPlayerItemDidPlayToEndTimeNotification
-                                               object:self.videoPlayer.currentItem];
 }
 
 // Wait for the video player status to change to ready before initializing video player controls
@@ -513,7 +527,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
     if (object != [_videoPlayer currentItem]) {
         return;
     }
-        
+    
     if ([keyPath isEqualToString:@"status"]) {
         AVPlayerStatus status = [[change objectForKey:NSKeyValueChangeNewKey] integerValue];
         switch (status) {
@@ -590,7 +604,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
         [[UIApplication sharedApplication] setStatusBarHidden:NO
                                                 withAnimation:UIStatusBarAnimationFade];
     }
-
+    
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideControlsAnimated:) object:@YES];
     
     if ([self isPlaying]) {
@@ -648,7 +662,7 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
     
     [_videoPlayerView.videoScrubber setHidden:NO];
     [_videoPlayerView.progressView setHidden:NO];
-
+    
     CGFloat width = CGRectGetWidth([_videoPlayerView.videoScrubber bounds]);
     interval = 0.5f * duration / width;
     __weak VideoPlayerKit *vpvc = self;
