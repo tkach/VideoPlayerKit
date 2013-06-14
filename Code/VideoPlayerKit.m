@@ -555,7 +555,6 @@ NSString * const kTrackEventVideoComplete = @"Video Complete";
             [self playVideo];
         }
         [[_videoPlayerView activityIndicator] stopAnimating];
-        
     } else if ([keyPath isEqualToString:@"loadedTimeRanges"]) {
         float durationTime = CMTimeGetSeconds([[self.videoPlayer currentItem] duration]);
         float bufferTime = [self availableDuration];
